@@ -20,6 +20,18 @@ public class CameraController : MonoBehaviour
     {
         this._Rotate();
         this._Zoom();
+
+        var ray = this._TargetCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out var hit))
+        {
+            var mr =hit.collider as MeshCollider;
+            //if (mr == null)
+            //    return;
+
+            Debug.Log(hit.textureCoord);
+            Debug.Log(hit.textureCoord2);
+
+        }
     }
 
     /// <summary>
