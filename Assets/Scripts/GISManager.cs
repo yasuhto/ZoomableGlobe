@@ -57,7 +57,7 @@ public class GISManager : MonoBehaviour
         this._WorldPositionText.text = worldPos.ToString();
 
         //  Geoç¿ïWïœä∑
-        if (!this.TryCalcGeo(worldPos, this.GISMapType, out var geo))
+        if (!this.TryCalcGeo(worldPos, this.MapSphere.transform.localScale.x * 0.5f, this.GISMapType, out var geo))
         {
             return;
         }
@@ -100,7 +100,7 @@ public class GISManager : MonoBehaviour
         return true;
     }
 
-    private bool TryCalcGeo(Vector3 worldPos, MapType mapType, out Vector2 geo)
+    private bool TryCalcGeo(Vector3 worldPos, float radius, MapType mapType, out Vector2 geo)
     {
         geo = Vector2.zero;
 
@@ -113,7 +113,7 @@ public class GISManager : MonoBehaviour
         }
 
         //  3D
-        geo = GeoFromGlobePosition(worldPos, MapSphere.transform.localScale.x * 0.5f);
+        geo = GeoFromGlobePosition(worldPos, radius);
 
         return true;
 
@@ -135,7 +135,7 @@ public class GISManager : MonoBehaviour
 
         //  3D
         var ray = Camera.main.ScreenPointToRay(screenPos);
-        if (Physics.Raycast(ray, out var hit, Mathf.Abs(this.MapSphere.transform.localScale.magnitude)))
+        if (Physics.Raycast(ray, out var hit))
         {
             worldPos = hit.point;
             return true;
