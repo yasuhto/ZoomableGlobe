@@ -22,6 +22,7 @@ public class GISManager : MonoBehaviour
 
     public RectTransform MapImage;
     public GameObject MapSphere;
+    public Camera TargetCamera;
 
     // Start is called before the first frame update
     void Start()
@@ -61,7 +62,7 @@ public class GISManager : MonoBehaviour
         {
             return;
         }
-        this._GeoPositionText.text = ToLatLngFormat(geo);
+        this._GeoPositionText.text = CoordinateHelper.ToLatLngFormat(geo);
 
         //  GridÀ•W•ÏŠ·
         if (!this.TryCalcGridPos(geo, this.GISMapType, out var gridPos))
@@ -69,14 +70,6 @@ public class GISManager : MonoBehaviour
             return;
         }
         this._GridPositionText.text = gridPos.ToString();
-    }
-
-    public static string ToLatLngFormat(Vector2 geo)
-    {
-        var lat = geo.x > 0 ? $"{Mathf.Abs(geo.x).ToString("0.000000")}'N" : $"{Mathf.Abs(geo.x).ToString("0.000000")}'S";
-        var lng = geo.y > 0 ? $"{Mathf.Abs(geo.y).ToString("0.000000")}'E" : $"{Mathf.Abs(geo.y).ToString("0.000000")}'W";
-
-        return $"{lat} {lng}";
     }
 
     private bool TryCalcGridPos(Vector2 geo, MapType mapType, out Vector2Int gridPos)
@@ -93,8 +86,13 @@ public class GISManager : MonoBehaviour
         }
         else
         {
-            gridPos.x = (int)(Screen.height * (geo.x + 90) / 180f);
-            gridPos.y = (int)(Screen.width * (geo.y + 180) / 360f);
+            var uv = CoordinateHelper.TouchPointToTextureUV(this.TargetCamera, Input.mousePosition);
+            var texHeight = this.MapSphere.GetComponent<Renderer>().material.mainTexture.height;
+            var texWidth = this.MapSphere.GetComponent<Renderer>().material.mainTexture.width;
+
+            gridPos.x = (int)Mathf.Round(uv.x * texHeight);
+            gridPos.y = (int)Mathf.Round(uv.y * texWidth);
+            //gridPos = CoordinateHelper.GeoToGrid(geo, texHeight, texWidth);
         }
 
         return true;
@@ -113,7 +111,7 @@ public class GISManager : MonoBehaviour
         }
 
         //  3D
-        geo = GeoFromGlobePosition(worldPos, radius);
+        geo = CoordinateHelper.WorldPositionToGeo(worldPos, radius);
 
         return true;
 
@@ -134,20 +132,7 @@ public class GISManager : MonoBehaviour
         }
 
         //  3D
-        var ray = Camera.main.ScreenPointToRay(screenPos);
-        if (Physics.Raycast(ray, out var hit))
-        {
-            worldPos = hit.point;
-            return true;
-        }
 
-        return false;
-    }
-
-    public static Vector2 GeoFromGlobePosition(Vector3 point, float radius)
-    {
-        float latitude = Mathf.Asin(point.y / radius);
-        float longitude = Mathf.Atan2(point.z, point.x);
-        return new Vector2(latitude * Mathf.Rad2Deg, longitude * Mathf.Rad2Deg);
+        return CoordinateHelper.TryTouchPointToWorldPosition(this.TargetCamera, screenPos, out worldPos);
     }
 }
