@@ -43,7 +43,7 @@ public class GlobeController : MonoBehaviour
             //this.TargetCamera.transform.Rotate(axis, cameraAngle, Space.World);
             //Debug.Log($"{from} : {axis} : {cameraAngle}");
 
-            //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
+            this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
 
 
 
@@ -57,7 +57,8 @@ public class GlobeController : MonoBehaviour
             {
                 var screenPos = this.TargetCamera.WorldToScreenPoint(this._TouchWorldPoint);
                 InputHepler.ZoomFromOnSphere(this.TargetCamera, screenPos, this.transform.position, view);
-                //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
+                
+                this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
             }
         }
 
