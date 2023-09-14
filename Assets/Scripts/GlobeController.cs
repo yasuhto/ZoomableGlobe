@@ -8,6 +8,7 @@ public class GlobeController : MonoBehaviour
     private Vector3 _TargetAxis;
     private float _TargetAngle;
     private float _Direction;
+    private Vector3 _TouchWorldPoint;
 
     private float _TargetCameraView;
 
@@ -45,16 +46,19 @@ public class GlobeController : MonoBehaviour
             //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
 
 
-            if (this.TargetCamera.fieldOfView > this._TargetCameraView)
-            {
-                float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this.RotateSpeed, min: 1f, max: this.TargetCamera.fieldOfView);
-                if (view >= 1f && view <= this.TargetCamera.fieldOfView)
-                {
-                    InputHepler.ZoomFromOnSphere(this.TargetCamera, Input.mousePosition, this.transform.position, view);
-                    //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
-                }
-            }
 
+
+        }
+
+        if (this.TargetCamera.fieldOfView > this._TargetCameraView)
+        {
+            float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this.RotateSpeed, min: 1f, max: this.TargetCamera.fieldOfView);
+            if (view >= 1f && view <= this.TargetCamera.fieldOfView)
+            {
+                var screenPos = this.TargetCamera.WorldToScreenPoint(this._TouchWorldPoint);
+                InputHepler.ZoomFromOnSphere(this.TargetCamera, screenPos, this.transform.position, view);
+                //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
+            }
         }
 
     }
@@ -111,6 +115,7 @@ public class GlobeController : MonoBehaviour
         this._TargetAxis = axis;
         this._Direction = Mathf.Sign(angle);
         this._TargetAngle = Mathf.Abs(angle);
+        this._TouchWorldPoint = from;
 
         //  現状の倍まで拡大する
         this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;

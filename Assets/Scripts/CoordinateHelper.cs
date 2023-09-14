@@ -5,7 +5,7 @@ public static class CoordinateHelper
     /// <summary>
     /// タッチした球体上のワールド座標に変換します
     /// </summary>
-    public static bool TryTouchPointToWorldPosition(Camera camera, Vector3 touch, out Vector3 worldPos)
+    public static bool TryTouchPointToWorld(Camera camera, Vector3 touch, out Vector3 worldPos)
     {
         worldPos = Vector3.zero;
 
@@ -18,6 +18,13 @@ public static class CoordinateHelper
 
         return false;
     }
+
+    public static bool TryWorldPositionToScreenPos(Camera camera, Vector3 worldPos, out Vector3 screenPos)
+    {
+        screenPos = camera.WorldToScreenPoint(worldPos);
+        return true;
+    }
+
 
     /// <summary>
     /// 球体上のワールド座標を緯度経度に変換します

@@ -18,26 +18,14 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
-        this._Rotate();
-        this._Zoom();
-
-        //var ray = this._TargetCamera.ScreenPointToRay(Input.mousePosition);
-        //if (Physics.Raycast(ray, out var hit))
-        //{
-        //    var mr =hit.collider as MeshCollider;
-        //    //if (mr == null)
-        //    //    return;
-
-        //    Debug.Log(hit.textureCoord);
-        //    Debug.Log(hit.textureCoord2);
-
-        //}
+        this.Rotate();
+        this.Zoom();
     }
 
     /// <summary>
     /// 指定した球オブジェクトを中心に、ドラッグに追従してカメラを回転させます
     /// </summary>
-    private void _Rotate()
+    private void Rotate()
     {
         //  平面上のドラッグから、球面上のドラッグ区間（AB）を求める
         InputHepler.GetMouseDragFromTo(this.TargetSphere, this._TargetCamera, out var fromPos, out var toPos);
@@ -47,7 +35,7 @@ public class CameraController : MonoBehaviour
     /// <summary>
     /// マウスカーソル位置を基準に、画面を拡縮します
     /// </summary>
-    private void _Zoom()
+    private void Zoom()
     {
         float scroll = Input.mouseScrollDelta.y;
         if (scroll == 0)

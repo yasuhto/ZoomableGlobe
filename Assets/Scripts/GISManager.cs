@@ -133,6 +133,6 @@ public class GISManager : MonoBehaviour
 
         //  3D
 
-        return CoordinateHelper.TryTouchPointToWorldPosition(this.TargetCamera, screenPos, out worldPos);
+        return CoordinateHelper.TryTouchPointToWorld(this.TargetCamera, screenPos, out worldPos);
     }
 }
