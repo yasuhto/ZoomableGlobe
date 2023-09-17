@@ -125,4 +125,22 @@ public static class InputHepler
         camera.transform.RotateAround(sphereCenter, axis, dragAngle);
     }
 
+    public static void ZoomFromOnSphere(Camera camera, Vector3 fromPos, Vector3 toPos, Vector3 sphereCenter, float view)
+    {
+        //camera.fieldOfView = view;
+
+        //  回転軸axisは、球面上の中心点（O）とABからなる平面の法線
+        var vecA = fromPos - sphereCenter;
+        var vecB = toPos - sphereCenter;
+        var axis = Vector3.Cross(vecA, vecB);
+
+        //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
+        //  拡縮時のカーソルのズレを打ち消す方向
+        var dragAngle = Vector3.SignedAngle(toPos, fromPos, axis);
+
+        //  回転軸axisに対してθ回転させる
+        camera.transform.RotateAround(sphereCenter, axis, dragAngle);
+        camera.fieldOfView = view;
+    }
+
 }

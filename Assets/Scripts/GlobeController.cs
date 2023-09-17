@@ -11,57 +11,19 @@ public class GlobeController : MonoBehaviour
     private Vector3 _TouchWorldPoint;
 
     private float _TargetCameraView;
+    private float _TargetCameraViewDelta;
 
     public Camera TargetCamera;
     public float RotateSpeed;
 
-    // Start is called before the first frame update
     void Start()
     {
         this._TargetCameraView = this.TargetCamera.fieldOfView;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (this._TargetAngle > 0f)
-        {
-            this._TargetAngle -= this.RotateSpeed;
-
-            //  回転軸axisに対してθ回転させる
-            var center = this.transform.position;
-            var angle = Mathf.Min(this._TargetAngle, this.RotateSpeed);
-            var sign = this._Direction;
-            this.TargetCamera.transform.RotateAround(center, this._TargetAxis, -1 * sign * angle);
-
-            //  ↑の回転により、カメラ自身のupと対象オブジェクトとupにズレが生じるので、打ち消す方向に回転
-            //  TODO:回転が振動する原因が不明。z軸が０に収束してないのも問題
-
-            //var axis = this.TargetCamera.transform.forward;
-            //var from = this.TargetCamera.transform.up;
-            //var cameraAngle = Vector3.SignedAngle(from, this.transform.up, axis);
-            //this.TargetCamera.transform.Rotate(axis, cameraAngle, Space.World);
-            //Debug.Log($"{from} : {axis} : {cameraAngle}");
-
-            this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
-
-
-
-
-        }
-
-        if (this.TargetCamera.fieldOfView > this._TargetCameraView)
-        {
-            float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this.RotateSpeed, min: 1f, max: this.TargetCamera.fieldOfView);
-            if (view >= 1f && view <= this.TargetCamera.fieldOfView)
-            {
-                var screenPos = this.TargetCamera.WorldToScreenPoint(this._TouchWorldPoint);
-                InputHepler.ZoomFromOnSphere(this.TargetCamera, screenPos, this.transform.position, view);
-                
-                this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
-            }
-        }
-
+        this.FocusOn(this._TouchWorldPoint);
     }
 
     public void OnClickDown()
@@ -76,6 +38,40 @@ public class GlobeController : MonoBehaviour
         this._TargetCameraView = DefaultFieldOfView;
     }
 
+    /// <summary>
+    /// 指定したワールド座標に徐々に注目する
+    /// </summary>
+    private void FocusOn(Vector3 focusPoint)
+    {
+        if (this._TargetAngle > 0f)
+        {
+            this._TargetAngle -= this.RotateSpeed;
+
+            var preUp = this.TargetCamera.transform.up;
+
+            //  回転軸axisに対してθ回転させる
+            var center = this.transform.position;
+            var angle = Mathf.Min(this._TargetAngle, this.RotateSpeed);
+            var sign = this._Direction;
+            this.TargetCamera.transform.RotateAround(center, this._TargetAxis, -1 * sign * angle);
+
+            //  回転に合わせて拡大
+            float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._TargetCameraViewDelta, min: this._TargetCameraView, max: this.TargetCamera.fieldOfView);
+            this.TargetCamera.fieldOfView = view;
+
+            //  ↑の回転により、カメラ自身のupと対象オブジェクトとupにズレが生じるので、打ち消す方向に回転
+            //  TODO:回転が振動する原因が不明。z軸が０に収束してないのも問題
+
+            //var axis = this.TargetCamera.transform.forward;
+            //var from = preUp;
+            //var cameraAngle = Vector3.SignedAngle(from, this.TargetCamera.transform.up, axis);
+            //this.TargetCamera.transform.Rotate(axis, cameraAngle, Space.World);
+            //Debug.Log($"{this.TargetCamera.transform.up} : {from} : {cameraAngle}");
+
+            //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
+        }
+    }
+
     private void OnDoubleClick()
     {
         //ダブルクリックされているか
@@ -86,7 +82,15 @@ public class GlobeController : MonoBehaviour
         }
         this._ClickCount = 0;
 
-        //  ダブルクリック地点がカメラの中心に収まるように回転する
+        this.SetFocusPoint();
+    }
+
+    /// <summary>
+    /// フォーカス位置を設定する
+    /// </summary>
+    private void SetFocusPoint()
+    {
+        //  ダブルクリック地点がカメラの中心に収まるように回転させる
 
         if (!Physics.Raycast(this.TargetCamera.transform.position, this.TargetCamera.transform.forward, out var hit))
         {
@@ -120,5 +124,6 @@ public class GlobeController : MonoBehaviour
 
         //  現状の倍まで拡大する
         this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;
+        this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.RotateSpeed);
     }
 }
