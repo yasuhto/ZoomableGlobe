@@ -3,6 +3,7 @@ using UnityEngine;
 public class GlobeController : MonoBehaviour
 {
     private readonly static float DefaultFieldOfView = 60f;
+    private readonly static float DoubleClickSpan = 0.3f;
 
     private int _ClickCount;
     private Vector3 _TargetAxis;
@@ -17,7 +18,8 @@ public class GlobeController : MonoBehaviour
     private float _TargetCameraUpSign;
 
     public Camera TargetCamera;
-    public float FocusSpeed;
+    public float FocusSpeed = 0.2f;
+    public float ZoomRate = 0.75f;
 
     void Start()
     {
@@ -31,8 +33,8 @@ public class GlobeController : MonoBehaviour
 
     public void OnClickDown()
     {
-        _ClickCount++;
-        this.Invoke("OnDoubleClick", 0.3f);
+        this._ClickCount++;
+        this.Invoke("OnDoubleClick", DoubleClickSpan);
     }
 
     public void OnScroll()
@@ -60,7 +62,7 @@ public class GlobeController : MonoBehaviour
             float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._TargetCameraViewDelta, min: this._TargetCameraView, max: this.TargetCamera.fieldOfView);
             this.TargetCamera.fieldOfView = view;
 
-           //  カメラのupを対象オブジェクトのupに合わせるため、ズレを計算
+            //  回転で生じるカメラと対象オブジェクトのupのズレを計算
             var axis = this.TargetCamera.transform.forward;
             var from = Vector3.ProjectOnPlane(this.TargetCamera.transform.up, this.TargetCamera.transform.forward);
             var to = Vector3.ProjectOnPlane(this.transform.up, this.TargetCamera.transform.forward);
@@ -86,10 +88,10 @@ public class GlobeController : MonoBehaviour
 
     private void OnDoubleClick()
     {
-        //ダブルクリックされているか
         if (this._ClickCount != 2)
         {
-            this._ClickCount = 0; 
+            this._ClickCount = 0;
+            //  ダブルクリックと判定されなかったのでカウントリセットして終了
             return;
         }
         this._ClickCount = 0;
@@ -102,7 +104,7 @@ public class GlobeController : MonoBehaviour
     /// </summary>
     private void SetFocusPoint()
     {
-        //  ダブルクリック地点がカメラの中心に収まるように回転させる
+        //  カメラの注視点とダブルクリック地点までの角度を保持
 
         if (!Physics.Raycast(this.TargetCamera.transform.position, this.TargetCamera.transform.forward, out var hit))
         {
@@ -115,30 +117,26 @@ public class GlobeController : MonoBehaviour
             return;
         }
 
-        {
-            var from = hit2.point;
-            var to = hit.point;
-            var center = this.transform.position;
+        var from = hit2.point;
+        var to = hit.point;
+        var center = this.transform.position;
 
-            //  カメラの注視点とダブルクリック地点までの角度を保持
+        //  回転軸axisは、球面上の中心点（O）とABからなる平面の法線
+        var vecA = from - center;
+        var vecB = to - center;
+        var axis = Vector3.Cross(vecA, vecB);
 
-            //  回転軸axisは、球面上の中心点（O）とABからなる平面の法線
-            var vecA = from - center;
-            var vecB = to - center;
-            var axis = Vector3.Cross(vecA, vecB);
+        //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
+        var angle = Vector3.SignedAngle(from, to, axis);
 
-            //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
-            var angle = Vector3.SignedAngle(from, to, axis);
+        this._TargetAxis = axis;
+        this._Direction = Mathf.Sign(angle);
+        this._TargetAngle = Mathf.Abs(angle);
+        this._TouchWorldPoint = from;
 
-            this._TargetAxis = axis;
-            this._Direction = Mathf.Sign(angle);
-            this._TargetAngle = Mathf.Abs(angle);
-            this._TouchWorldPoint = from;
-
-            //  現状の倍まで拡大する
-            this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;
-            this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.FocusSpeed);
-        }
+        //  拡大
+        this._TargetCameraView = this.TargetCamera.fieldOfView * this.ZoomRate;
+        this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.FocusSpeed);
     }
 
     void OnDrawGizmos()
