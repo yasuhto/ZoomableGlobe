@@ -5,17 +5,16 @@ public class GlobeController : MonoBehaviour
     private readonly static float DefaultFieldOfView = 60f;
     private readonly static float DoubleClickSpan = 0.3f;
 
-    private int _ClickCount;
-    private Vector3 _TargetAxis;
-    private float _TargetAngle;
-    private float _Direction;
+    private bool _EnableAlignmentAxis = false;
     private Vector3 _TouchWorldPoint;
-
-    private float _TargetCameraView;
-    private float _TargetCameraViewDelta;
-
-    private float _TargetCameraUpAngle;
-    private float _TargetCameraUpSign;
+    private Vector3 _CameraRotateAroundAxis;
+    private float _CameraRotateAroundAngle;
+    private float _CameraRotateAroundSign;
+    private float _CameraView;
+    private float _CameraViewDelta;
+    private float _CameraUpAngle;
+    private float _CameraUpSign;
+    private int _ClickCount;
 
     public Camera TargetCamera;
     public float FocusSpeed = 0.2f;
@@ -23,12 +22,13 @@ public class GlobeController : MonoBehaviour
 
     void Start()
     {
-        this._TargetCameraView = this.TargetCamera.fieldOfView;
+        this._CameraView = this.TargetCamera.fieldOfView;
     }
 
     void Update()
     {
         this.FocusOn(this._TouchWorldPoint);
+        this.AlignmentAxis();
     }
 
     public void OnClickDown()
@@ -40,7 +40,24 @@ public class GlobeController : MonoBehaviour
     public void OnScroll()
     {
         //  スクロール操作で拡縮するため、ダブルクリック時の拡縮設定をリセット
-        this._TargetCameraView = DefaultFieldOfView;
+        this._CameraView = DefaultFieldOfView;
+    }
+
+    public void OnAlignmentAxisButton()
+    {
+        //  カメラと対象オブジェクトとのup方向のズレを補正
+
+        var axis = this.TargetCamera.transform.forward;
+        var from = Vector3.ProjectOnPlane(this.TargetCamera.transform.up, this.TargetCamera.transform.forward);
+        var to = Vector3.ProjectOnPlane(this.transform.up, this.TargetCamera.transform.forward);
+        var center = this.transform.position;
+        var vecA = from - center;
+        var vecB = to - center;
+        var angle = Vector3.SignedAngle(vecA, vecB, axis);
+        this._CameraUpAngle = Mathf.Abs(angle);
+        this._CameraUpSign = Mathf.Sign(angle);
+
+        this._EnableAlignmentAxis = true;
     }
 
     /// <summary>
@@ -48,41 +65,46 @@ public class GlobeController : MonoBehaviour
     /// </summary>
     private void FocusOn(Vector3 focusPoint)
     {
-        if (this._TargetAngle > 0f)
+        if (this._CameraRotateAroundAngle > 0f)
         {
-            this._TargetAngle -= this.FocusSpeed;
+            this._CameraRotateAroundAngle -= this.FocusSpeed;
 
             //  回転軸axisに対してθ回転させる
-            var center = this.transform.position;
-            var angle = Mathf.Min(this._TargetAngle, this.FocusSpeed);
-            var sign = this._Direction;
-            this.TargetCamera.transform.RotateAround(center, this._TargetAxis, -1 * sign * angle);
+            {
+                var center = this.transform.position;
+                var angle = Mathf.Min(this._CameraRotateAroundAngle, this.FocusSpeed);
+                var sign = this._CameraRotateAroundSign;
+                this.TargetCamera.transform.RotateAround(center, this._CameraRotateAroundAxis, -1 * sign * angle);
+            }
 
             //  回転に合わせて拡大
-            float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._TargetCameraViewDelta, min: this._TargetCameraView, max: this.TargetCamera.fieldOfView);
-            this.TargetCamera.fieldOfView = view;
+            this.TargetCamera.fieldOfView = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._CameraViewDelta, min: this._CameraView, max: this.TargetCamera.fieldOfView);
+        }
+    }
 
-            //  回転で生じるカメラと対象オブジェクトのupのズレを計算
-            var axis = this.TargetCamera.transform.forward;
-            var from = Vector3.ProjectOnPlane(this.TargetCamera.transform.up, this.TargetCamera.transform.forward);
-            var to = Vector3.ProjectOnPlane(this.transform.up, this.TargetCamera.transform.forward);
-            var vecA = from - center;
-            var vecB = to - center;
-            angle = Vector3.SignedAngle(vecA, vecB, axis);
-            this._TargetCameraUpAngle = Mathf.Abs(angle);
-            this._TargetCameraUpSign = Mathf.Sign(angle);
+    /// <summary>
+    /// 地球の極軸をスクリーンに合わせます
+    /// </summary>
+    private void AlignmentAxis()
+    {
+        if (!this._EnableAlignmentAxis)
+        {
+            return;
         }
 
-        //  カメラのupを対象オブジェクトのupに合わせる
-        if (this._TargetCameraUpAngle > 0f)
-        {
-            this._TargetCameraUpAngle -= this.FocusSpeed;
+        //  カメラのupを対象オブジェクトのupに徐々に合わせる
 
-            var axis = this.TargetCamera.transform.forward;
-            var angle = this._TargetCameraUpAngle > 0 ?
-                this.FocusSpeed : this.FocusSpeed + this._TargetCameraUpAngle;
-            this.TargetCamera.transform.Rotate(axis, this._TargetCameraUpSign * angle, Space.World);
-            Debug.Log($"{this.TargetCamera.transform.forward} : {this._TargetCameraUpAngle}");
+        this._CameraUpAngle -= this.FocusSpeed;
+
+        var axis = this.TargetCamera.transform.forward;
+        var angle = this._CameraUpAngle > 0 ?
+            this.FocusSpeed : this.FocusSpeed + this._CameraUpAngle;
+        this.TargetCamera.transform.Rotate(axis, this._CameraUpSign * angle, Space.World);
+
+        //  補正が終了したらフラグをおろす
+        if (this._CameraUpAngle <= 0f)
+        {
+            this._EnableAlignmentAxis = false;
         }
     }
 
@@ -105,7 +127,6 @@ public class GlobeController : MonoBehaviour
     private void SetFocusPoint()
     {
         //  カメラの注視点とダブルクリック地点までの角度を保持
-
         if (!Physics.Raycast(this.TargetCamera.transform.position, this.TargetCamera.transform.forward, out var hit))
         {
             return;
@@ -129,14 +150,14 @@ public class GlobeController : MonoBehaviour
         //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
         var angle = Vector3.SignedAngle(from, to, axis);
 
-        this._TargetAxis = axis;
-        this._Direction = Mathf.Sign(angle);
-        this._TargetAngle = Mathf.Abs(angle);
+        this._CameraRotateAroundAxis = axis;
+        this._CameraRotateAroundSign = Mathf.Sign(angle);
+        this._CameraRotateAroundAngle = Mathf.Abs(angle);
         this._TouchWorldPoint = from;
 
         //  拡大
-        this._TargetCameraView = this.TargetCamera.fieldOfView * this.ZoomRate;
-        this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.FocusSpeed);
+        this._CameraView = this.TargetCamera.fieldOfView * this.ZoomRate;
+        this._CameraViewDelta = (this.TargetCamera.fieldOfView - this._CameraView) / (this._CameraRotateAroundAngle / this.FocusSpeed);
     }
 
     void OnDrawGizmos()
