@@ -5,6 +5,7 @@ public class GlobeController : MonoBehaviour
     private readonly static float DefaultFieldOfView = 60f;
     private readonly static float DoubleClickSpan = 0.3f;
 
+    private bool _EnableFocusOn = false;
     private bool _EnableAlignmentAxis = false;
     private Vector3 _TouchWorldPoint;
     private Vector3 _CameraRotateAroundAxis;
@@ -65,20 +66,28 @@ public class GlobeController : MonoBehaviour
     /// </summary>
     private void FocusOn(Vector3 focusPoint)
     {
-        if (this._CameraRotateAroundAngle > 0f)
+        if (!this._EnableFocusOn)
         {
-            this._CameraRotateAroundAngle -= this.FocusSpeed;
+            return;
+        }
 
-            //  回転軸axisに対してθ回転させる
-            {
-                var center = this.transform.position;
-                var angle = Mathf.Min(this._CameraRotateAroundAngle, this.FocusSpeed);
-                var sign = this._CameraRotateAroundSign;
-                this.TargetCamera.transform.RotateAround(center, this._CameraRotateAroundAxis, -1 * sign * angle);
-            }
+        this._CameraRotateAroundAngle -= this.FocusSpeed;
 
-            //  回転に合わせて拡大
-            this.TargetCamera.fieldOfView = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._CameraViewDelta, min: this._CameraView, max: this.TargetCamera.fieldOfView);
+        //  回転軸axisに対してθ回転させる
+        {
+            var center = this.transform.position;
+            var angle = Mathf.Min(this._CameraRotateAroundAngle, this.FocusSpeed);
+            var sign = this._CameraRotateAroundSign;
+            this.TargetCamera.transform.RotateAround(center, this._CameraRotateAroundAxis, -1 * sign * angle);
+        }
+
+        //  回転に合わせて拡大
+        this.TargetCamera.fieldOfView = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._CameraViewDelta, min: this._CameraView, max: this.TargetCamera.fieldOfView);
+
+        //  補正が終了したらフラグをおろす
+        if (this._CameraRotateAroundAngle <= 0f)
+        {
+            this._EnableFocusOn = false;
         }
     }
 
@@ -158,6 +167,8 @@ public class GlobeController : MonoBehaviour
         //  拡大
         this._CameraView = this.TargetCamera.fieldOfView * this.ZoomRate;
         this._CameraViewDelta = (this.TargetCamera.fieldOfView - this._CameraView) / (this._CameraRotateAroundAngle / this.FocusSpeed);
+    
+        this._EnableFocusOn = true;
     }
 
     void OnDrawGizmos()
