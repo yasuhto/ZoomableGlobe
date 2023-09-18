@@ -13,6 +13,9 @@ public class GlobeController : MonoBehaviour
     private float _TargetCameraView;
     private float _TargetCameraViewDelta;
 
+    private float _TargetCameraUpAngle;
+    private float _TargetCameraUpSign;
+
     public Camera TargetCamera;
     public float RotateSpeed;
 
@@ -62,13 +65,28 @@ public class GlobeController : MonoBehaviour
             //  ↑の回転により、カメラ自身のupと対象オブジェクトとupにズレが生じるので、打ち消す方向に回転
             //  TODO:回転が振動する原因が不明。z軸が０に収束してないのも問題
 
-            //var axis = this.TargetCamera.transform.forward;
-            //var from = preUp;
-            //var cameraAngle = Vector3.SignedAngle(from, this.TargetCamera.transform.up, axis);
-            //this.TargetCamera.transform.Rotate(axis, cameraAngle, Space.World);
-            //Debug.Log($"{this.TargetCamera.transform.up} : {from} : {cameraAngle}");
+            //  カメラのforwordベクトルに直交する平面上の角度分、カメラを平行回転させる
+            var axis = this.TargetCamera.transform.forward;
+            var from = Vector3.ProjectOnPlane(this.TargetCamera.transform.up, this.TargetCamera.transform.forward);
+            var to = Vector3.ProjectOnPlane(this.transform.up, this.TargetCamera.transform.forward);
+            var vecA = from - center;
+            var vecB = to - center;
+            angle = Vector3.SignedAngle(vecA, vecB, axis);
+            this._TargetCameraUpAngle = Mathf.Abs(angle);
+            this._TargetCameraUpSign = Mathf.Sign(angle);
 
             //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
+        }
+
+        if (this._TargetCameraUpAngle > 0f)
+        {
+            this._TargetCameraUpAngle -= this.RotateSpeed;
+
+            var axis = this.TargetCamera.transform.forward;
+            var angle = this._TargetCameraUpAngle > 0 ?
+                this.RotateSpeed : this.RotateSpeed + this._TargetCameraUpAngle;
+            this.TargetCamera.transform.Rotate(axis, this._TargetCameraUpSign * angle, Space.World);
+            Debug.Log($"{this.TargetCamera.transform.forward} : {this._TargetCameraUpAngle}");
         }
     }
 
@@ -103,27 +121,34 @@ public class GlobeController : MonoBehaviour
             return;
         }
 
-        var from = hit2.point;
-        var to = hit.point;
-        var center = this.transform.position;
+        {
+            var from = hit2.point;
+            var to = hit.point;
+            var center = this.transform.position;
 
-        //  カメラの注視点とダブルクリック地点までの角度を保持
+            //  カメラの注視点とダブルクリック地点までの角度を保持
 
-        //  回転軸axisは、球面上の中心点（O）とABからなる平面の法線
-        var vecA = from - center;
-        var vecB = to - center;
-        var axis = Vector3.Cross(vecA, vecB);
+            //  回転軸axisは、球面上の中心点（O）とABからなる平面の法線
+            var vecA = from - center;
+            var vecB = to - center;
+            var axis = Vector3.Cross(vecA, vecB);
 
-        //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
-        var angle = Vector3.SignedAngle(from, to, axis);
+            //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
+            var angle = Vector3.SignedAngle(from, to, axis);
 
-        this._TargetAxis = axis;
-        this._Direction = Mathf.Sign(angle);
-        this._TargetAngle = Mathf.Abs(angle);
-        this._TouchWorldPoint = from;
+            this._TargetAxis = axis;
+            this._Direction = Mathf.Sign(angle);
+            this._TargetAngle = Mathf.Abs(angle);
+            this._TouchWorldPoint = from;
 
-        //  現状の倍まで拡大する
-        this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;
-        this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.RotateSpeed);
+            //  現状の倍まで拡大する
+            this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;
+            this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.RotateSpeed);
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+        //Gizmos.DrawSphere(this._TouchWorldPoint, 5f);
     }
 }

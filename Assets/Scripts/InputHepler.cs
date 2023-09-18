@@ -51,7 +51,7 @@ public static class InputHepler
             {
                 return;
             }
-            Debug.DrawRay(ray.origin, ray.direction * 100, Color.green, 5, true);
+            //Debug.DrawRay(ray.origin, ray.direction * 100, Color.green, 5, true);
 
             var ray2 = camera.ScreenPointToRay(StartTouchPosition);
             if (!Physics.Raycast(ray2, out var hit2))
