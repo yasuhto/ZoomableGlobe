@@ -46,30 +46,12 @@ public class GISManager : MonoBehaviour
 
     private void UpdatePositionInfo()
     {
-        // スクリーン座標の取得  
         var screenPos = Input.mousePosition;
+
         this._ScreenPositionText.text = screenPos.ToString();
-
-        //  World座標変換
-        if (!this.TryCalcWorldPosition(screenPos, this.GISMapType, out var worldPos))
-        {
-            return;
-        }
-        this._WorldPositionText.text = worldPos.ToString();
-
-        //  Geo座標変換
-        if (!this.TryCalcGeo(worldPos, this.MapSphere.transform.localScale.x * 0.5f, this.GISMapType, out var geo))
-        {
-            return;
-        }
-        this._GeoPositionText.text = CoordinateHelper.ToLatLngFormat(geo);
-
-        //  Grid座標変換
-        if (!this.TryCalcGridPos(geo, this.GISMapType, out var gridPos))
-        {
-            return;
-        }
-        this._GridPositionText.text = gridPos.ToString();
+        this._WorldPositionText.text = this.TryCalcWorldPosition(screenPos, this.GISMapType, out var worldPos) ? worldPos.ToString() : string.Empty;
+        this._GeoPositionText.text = this.TryCalcGeo(worldPos, this.MapSphere.transform.localScale.x * 0.5f, this.GISMapType, out var geo) ? CoordinateHelper.ToLatLngFormat(geo) : string.Empty;
+        this._GridPositionText.text = this.TryCalcGridPos(geo, this.GISMapType, out var gridPos) ? gridPos.ToString() : string.Empty;
     }
 
     private bool TryCalcGridPos(Vector2 geo, MapType mapType, out Vector2Int gridPos)

@@ -17,7 +17,7 @@ public class GlobeController : MonoBehaviour
     private float _TargetCameraUpSign;
 
     public Camera TargetCamera;
-    public float RotateSpeed;
+    public float FocusSpeed;
 
     void Start()
     {
@@ -48,13 +48,11 @@ public class GlobeController : MonoBehaviour
     {
         if (this._TargetAngle > 0f)
         {
-            this._TargetAngle -= this.RotateSpeed;
-
-            var preUp = this.TargetCamera.transform.up;
+            this._TargetAngle -= this.FocusSpeed;
 
             //  回転軸axisに対してθ回転させる
             var center = this.transform.position;
-            var angle = Mathf.Min(this._TargetAngle, this.RotateSpeed);
+            var angle = Mathf.Min(this._TargetAngle, this.FocusSpeed);
             var sign = this._Direction;
             this.TargetCamera.transform.RotateAround(center, this._TargetAxis, -1 * sign * angle);
 
@@ -62,10 +60,7 @@ public class GlobeController : MonoBehaviour
             float view = Mathf.Clamp(value: this.TargetCamera.fieldOfView - this._TargetCameraViewDelta, min: this._TargetCameraView, max: this.TargetCamera.fieldOfView);
             this.TargetCamera.fieldOfView = view;
 
-            //  ↑の回転により、カメラ自身のupと対象オブジェクトとupにズレが生じるので、打ち消す方向に回転
-            //  TODO:回転が振動する原因が不明。z軸が０に収束してないのも問題
-
-            //  カメラのforwordベクトルに直交する平面上の角度分、カメラを平行回転させる
+           //  カメラのupを対象オブジェクトのupに合わせるため、ズレを計算
             var axis = this.TargetCamera.transform.forward;
             var from = Vector3.ProjectOnPlane(this.TargetCamera.transform.up, this.TargetCamera.transform.forward);
             var to = Vector3.ProjectOnPlane(this.transform.up, this.TargetCamera.transform.forward);
@@ -74,17 +69,16 @@ public class GlobeController : MonoBehaviour
             angle = Vector3.SignedAngle(vecA, vecB, axis);
             this._TargetCameraUpAngle = Mathf.Abs(angle);
             this._TargetCameraUpSign = Mathf.Sign(angle);
-
-            //this.TargetCamera.transform.LookAt(this.transform, this.transform.up);
         }
 
+        //  カメラのupを対象オブジェクトのupに合わせる
         if (this._TargetCameraUpAngle > 0f)
         {
-            this._TargetCameraUpAngle -= this.RotateSpeed;
+            this._TargetCameraUpAngle -= this.FocusSpeed;
 
             var axis = this.TargetCamera.transform.forward;
             var angle = this._TargetCameraUpAngle > 0 ?
-                this.RotateSpeed : this.RotateSpeed + this._TargetCameraUpAngle;
+                this.FocusSpeed : this.FocusSpeed + this._TargetCameraUpAngle;
             this.TargetCamera.transform.Rotate(axis, this._TargetCameraUpSign * angle, Space.World);
             Debug.Log($"{this.TargetCamera.transform.forward} : {this._TargetCameraUpAngle}");
         }
@@ -143,7 +137,7 @@ public class GlobeController : MonoBehaviour
 
             //  現状の倍まで拡大する
             this._TargetCameraView = this.TargetCamera.fieldOfView * 0.75f;
-            this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.RotateSpeed);
+            this._TargetCameraViewDelta = (this.TargetCamera.fieldOfView - this._TargetCameraView) / (this._TargetAngle / this.FocusSpeed);
         }
     }
 

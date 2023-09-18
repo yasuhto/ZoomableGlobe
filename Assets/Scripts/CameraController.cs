@@ -46,7 +46,7 @@ public class CameraController : MonoBehaviour
         float view = Mathf.Clamp(value: this._TargetCamera.fieldOfView - scroll * ZoomSpeed, min: CameraFieldOfViewMin, max: this._FieldOfViewDefault);
         if (view >= CameraFieldOfViewMin && view <= this._FieldOfViewDefault)
         {
-            InputHepler.ZoomFromOnSphere(this._TargetCamera, Input.mousePosition, this.TargetSphere.position, view);
+            InputHepler.ZoomFromOnSphere(Input.mousePosition, this._TargetCamera, this.TargetSphere.position, view);
         }
     }
 }
