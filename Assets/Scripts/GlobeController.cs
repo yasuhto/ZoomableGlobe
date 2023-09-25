@@ -1,4 +1,9 @@
+using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+
 
 public class GlobeController : MonoBehaviour
 {
@@ -20,6 +25,7 @@ public class GlobeController : MonoBehaviour
     public Camera TargetCamera;
     public float FocusSpeed = 0.2f;
     public float ZoomRate = 0.75f;
+    public MakerService MakerService;
 
     void Start()
     {
@@ -128,6 +134,9 @@ public class GlobeController : MonoBehaviour
         this._ClickCount = 0;
 
         this.SetFocusPoint();
+
+        // マーカーを指定位置に生成
+        this.MakerService.CreateMaker(this._TouchWorldPoint, this.transform.localScale.x * 0.5f);
     }
 
     /// <summary>
