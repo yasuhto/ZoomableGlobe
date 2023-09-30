@@ -136,7 +136,7 @@ public class GlobeController : MonoBehaviour
         this.SetFocusPoint();
 
         // マーカーを指定位置に生成
-        this.MakerService.CreateMaker(this._TouchWorldPoint, this.transform.localScale.x * 0.5f);
+        StartCoroutine(this.MakerService.CreateMaker(this._TouchWorldPoint, this.transform.localScale.x * 0.5f));
     }
 
     /// <summary>

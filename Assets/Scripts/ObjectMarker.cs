@@ -16,6 +16,8 @@ public class ObjectMarker : MonoBehaviour
 
     private RectTransform _parentUI;
 
+    public Vector2 LatLon { get; set; }
+
     // 初期化メソッド（Prefabから生成する時などに使う）
     public void Initialize(Transform target, Camera targetCamera = null)
     {
@@ -53,13 +55,17 @@ public class ObjectMarker : MonoBehaviour
         // カメラからターゲットへのベクトル
         var targetDir = targetWorldPos - cameraTransform.position;
 
-        // 内積を使ってカメラ前方かどうかを判定
-        var isFront = Vector3.Dot(cameraDir, targetDir) > 0;
+        //// 内積を使ってカメラ前方かどうかを判定
+        //var isFront = Vector3.Dot(cameraDir, targetDir) > 0;
 
-        // カメラ前方ならUI表示、後方なら非表示
-        _targetUI.gameObject.SetActive(isFront);
-        if (!isFront) return;
+        //// カメラ前方ならUI表示、後方なら非表示
+        //_targetUI.gameObject.SetActive(isFront);
+        //if (!isFront) return;
 
+#if false
+        this._targetUI.position = targetWorldPos;
+        this._targetUI.transform.LookAt(targetDir, this._targetCamera.transform.up);
+#else
         // オブジェクトのワールド座標→スクリーン座標変換
         var targetScreenPos = _targetCamera.WorldToScreenPoint(targetWorldPos);
 
@@ -73,5 +79,7 @@ public class ObjectMarker : MonoBehaviour
 
         // RectTransformのローカル座標を更新
         _targetUI.localPosition = uiLocalPos;
+#endif
+
     }
 }
