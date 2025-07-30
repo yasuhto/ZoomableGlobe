@@ -37,6 +37,21 @@ public static class CoordinateHelper
     }
 
     /// <summary>
+    /// 緯度経度をワールド座標に変換します
+    /// </summary>
+    public static Vector3 GeoToWorldPosition(Vector2 geo, float radius)
+    {
+        float latRad = geo.x * Mathf.Deg2Rad;
+        float lonRad = geo.y * Mathf.Deg2Rad;
+
+        float x = radius * Mathf.Cos(latRad) * Mathf.Cos(lonRad);
+        float y = radius * Mathf.Sin(latRad);
+        float z = radius * Mathf.Cos(latRad) * Mathf.Sin(lonRad);
+
+        return new Vector3(x, y, z);
+    }
+
+    /// <summary>
     /// 緯度経度をグリッド座標に変換します
     /// </summary>
     public static Vector2Int GeoToGrid(Vector2 geo, int texHeight, int texWidth)

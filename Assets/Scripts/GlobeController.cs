@@ -85,6 +85,8 @@ public class GlobeController : MonoBehaviour
             var angle = Mathf.Min(this._CameraRotateAroundAngle, this.FocusSpeed);
             var sign = this._CameraRotateAroundSign;
             this.TargetCamera.transform.RotateAround(center, this._CameraRotateAroundAxis, -1 * sign * angle);
+            // カメラを中心方向に向け、上方向をワールドYにする
+            this.TargetCamera.transform.LookAt(center, Vector3.up);
         }
 
         //  回転に合わせて拡大

@@ -2,6 +2,8 @@
 
 public static class InputHepler
 {
+    public static float maxVerticalAngle = 85f;  // 最大仰角
+
     private static Vector3 StartTouchPosition;
   
     /// <summary>
@@ -66,6 +68,7 @@ public static class InputHepler
         }
     }
 
+ 
     /// <summary>
     /// 指定した3点からなる球面と角度を中心にターゲットを回転させます
     /// </summary>
@@ -79,9 +82,50 @@ public static class InputHepler
         //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
         var angle = Vector3.SignedAngle(from, to, axis);
 
-        //  回転軸axisに対してθ回転させる
-        target.RotateAround(center, axis, -1 * angle);
+#if true
+        // マウスのドラックになるべく同期しつつ、カメラが上下逆さまにならないよう、up方向を維持するように回転
+        RotateAroundOnSphereWithUp(target, center, axis, angle, vecA);
+#else
+        // マウスのドラッグに同期して自由に回転する
+        target.RotateAround(center, axis, -angle);
+#endif
     }
+
+    /// <summary>
+    /// 指定した3点からなる球面と角度を中心にターゲットを回転させ、up方向は維持します
+    /// </summary>
+    private static void RotateAroundOnSphereWithUp(Transform target, Vector3 center, Vector3 axis, float angle, Vector3 vecA)
+    {
+        // 小さい動きでaxisが無効な場合はスキップ
+        if (axis.sqrMagnitude < 1e-6f) return;
+
+        // --- 極では極軸を中心に回転させるので、向きを調整
+
+        // from が カメラから見て極の「手前側 or 奥側」にあるか判定
+        var camForward = Vector3.Cross(Vector3.up, target.right).normalized;
+        var side = Vector3.Dot(vecA, camForward);
+        if (side < 0f)
+        {
+            // 奥側にある場合は回転方向を反転
+            angle *= -1f;
+        }
+
+        // --- 上下反転防止処理 ---
+
+        // 回転を仮適用（後で取り消せるように）
+        // FIXME：「仮にでも実行」された回転が1フレームでも反映されてしまう可能性がある。Quaternion で試算する
+        target.RotateAround(center, axis, -angle);
+        // カメラの「上」が下を向いていないかをチェック（85度以上傾いたら反転とみなす）
+        if (Vector3.Dot(target.up, Vector3.up) < Mathf.Cos(maxVerticalAngle * Mathf.Deg2Rad))
+        {
+            // 反転しそうなら回転を打ち消す
+            target.RotateAround(center, axis, angle);
+        }
+
+        // カメラを中心方向に向け、上方向をワールドYにする
+        target.LookAt(center, Vector3.up);
+    }
+
 
     /// <summary>
     /// 指定した点を中心にターゲットを拡縮させます
@@ -123,5 +167,9 @@ public static class InputHepler
 
         //  回転軸axisに対してθ回転させる
         camera.transform.RotateAround(sphereCenter, axis, dragAngle);
+
+        // カメラを中心方向に向け、上方向をワールドYにする
+        // TODO:カメラの回転後のカーソルのずれを打ち消す
+        //camera.transform.LookAt(sphereCenter, Vector3.up);
     }
 }
