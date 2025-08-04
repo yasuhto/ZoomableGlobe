@@ -82,7 +82,7 @@ public static class InputHepler
         //  球面上の中心点（O）から軸axisに対する回転角度（θ）を求める
         var angle = Vector3.SignedAngle(from, to, axis);
 
-#if true
+#if false
         // マウスのドラックになるべく同期しつつ、カメラが上下逆さまにならないよう、up方向を維持するように回転
         RotateAroundOnSphereWithUp(target, center, axis, angle, vecA);
 #else
